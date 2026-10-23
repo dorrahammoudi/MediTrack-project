@@ -1,0 +1,155 @@
+.container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #3a3a5c;
+  padding-bottom: 15px;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #ffffff;
+}
+
+.header span {
+  font-weight: bold;
+  color: #a0a0c0;
+}
+
+.dashboard-layout {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+/* La carte du patient */
+.patient-card {
+  flex: 1;
+  background-color: #2a2a3e; /* Le violet/gris de la carte */
+  border: 1px solid #3a3a5c;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+/* Bordures de statut simples (sans animation) */
+.status-normal { border-left: 8px solid #4caf50; }
+.status-warning { border-left: 8px solid #ff9800; }
+.status-critical { 
+  border-left: 8px solid #f44336; 
+  background-color: #382530; /* Un léger voile rouge sombre en cas de crise */
+}
+
+.patient-card h2 {
+  margin-top: 0;
+  font-size: 20px;
+  color: #ffffff;
+  border-bottom: 1px solid #3a3a5c;
+  padding-bottom: 10px;
+}
+
+/* Les boîtes de données */
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.data-box {
+  flex: 1;
+  text-align: center;
+  padding: 15px 5px;
+  background-color: #1e1e2f; /* Même bleu nuit pour contraster */
+  border: 1px solid #3a3a5c;
+  border-radius: 6px;
+}
+
+.data-box p {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #a0a0c0;
+}
+
+.data-box h3 {
+  margin: 0;
+  font-size: 22px;
+  color: #ffffff;
+}
+
+.status-text {
+  margin-top: 25px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+/* Panneau d'alertes */
+.alerts-section {
+  flex: 1;
+  background-color: #2a2a3e;
+  border: 1px solid #3a3a5c;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.alerts-section h2 {
+  margin-top: 0;
+  font-size: 20px;
+  color: #ffffff;
+  border-bottom: 1px solid #3a3a5c;
+  padding-bottom: 10px;
+}
+
+.no-alerts {
+  color: #a0a0c0;
+  font-size: 16px;
+}
+
+/* Boîtes d'alerte */
+.alert-box {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #3a3a5c;
+  padding: 15px;
+  margin-bottom: 15px;
+  background-color: #1e1e2f;
+  border-radius: 6px;
+}
+
+.alert-box.warning { border-left: 5px solid #ff9800; }
+.alert-box.critical { border-left: 5px solid #f44336; }
+
+.alert-box strong {
+  color: #ffffff;
+  font-size: 16px;
+}
+
+.alert-box p {
+  margin: 10px 0;
+  font-size: 14px;
+  color: #a0a0c0;
+}
+
+/* Bouton Acknowledge */
+button {
+  padding: 10px;
+  background-color: #3b82f6; /* Le bouton bleu */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+button:hover {
+  background-color: #2563eb;
+}

@@ -1,0 +1,216 @@
+{
+  "format": "velxio-project",
+  "version": 1,
+  "exportedAt": "2026-10-21T18:40:17.234Z",
+  "name": "projet-iot",
+  "boards": [
+    {
+      "id": "esp32",
+      "boardKind": "esp32",
+      "x": 50,
+      "y": 50,
+      "activeFileGroupId": "group-esp32",
+      "languageMode": "arduino",
+      "serialBaudRate": 115200,
+      "libraries": [
+        "ArduinoJson",
+        "PubSubClient"
+      ]
+    }
+  ],
+  "fileGroups": {
+    "group-esp32": [
+      {
+        "name": "sketch.ino",
+        "content": "#include <WiFi.h>\n#include <PubSubClient.h>\n#include <ArduinoJson.h>\n\nconst char* ssid = \"Velxio-GUEST\"; \nconst char* password = \"\";\nconst char* mqtt_server = \"broker.hivemq.com\";\nconst char* mqtt_topic = \"patients/P001/vitals\";\nconst char* command_topic = \"patients/P001/commands\"; \n\nconst int ledPin = 4;    \nconst int buzzerPin = 5; \nconst int buttonPin = 12;\n\nbool alarmAcknowledged = false; \n\nWiFiClient espClient;\nPubSubClient client(espClient);\nunsigned long lastMsg = 0;\nconst long interval = 5000;\n\nvoid callback(char* topic, byte* payload, unsigned int length) {\n  String message = \"\";\n  for (int i = 0; i < length; i++) {\n    message += (char)payload[i];\n  }\n  \n  if (message.indexOf(\"stop_alarm\") >= 0) {\n    Serial.println(\"🔕 Ordre d'acquittement reçu !\");\n    alarmAcknowledged = true; \n    digitalWrite(ledPin, LOW);\n    noTone(buzzerPin);\n  }\n}\n\nvoid setup_wifi() {\n  WiFi.mode(WIFI_STA);\n  WiFi.begin(ssid, password);\n  while (WiFi.status() != WL_CONNECTED) {\n    delay(500);\n    Serial.print(\".\");\n  }\n}\n\nvoid reconnect() {\n  while (!client.connected()) {\n    String clientId = \"ESP32Client-\";\n    clientId += String(random(0xffff), HEX);\n    if (client.connect(clientId.c_str())) {\n      Serial.println(\"MQTT connecte\");\n      client.subscribe(command_topic); \n    } else {\n      delay(5000);\n    }\n  }\n}\n\nvoid setup() {\n  Serial.begin(115200);\n  pinMode(ledPin, OUTPUT);\n  pinMode(buzzerPin, OUTPUT);\n  pinMode(buttonPin, INPUT_PULLUP); \n  \n  setup_wifi();\n  client.setServer(mqtt_server, 1883);\n  client.setCallback(callback); \n}\n\nvoid loop() {\n  if (!client.connected()) reconnect();\n  client.loop();\n\n  unsigned long now = millis();\n  if (now - lastMsg > interval) {\n    lastMsg = now;\n\n    int heartRate;\n    int spo2;\n    float temperature;\n\n    // Est-ce qu'on déclenche une urgence ? (Bouton pressé OU 10% de chance)\n    bool triggerEmergency = (digitalRead(buttonPin) == LOW && !alarmAcknowledged) || (random(0, 100) < 10);\n\n    if (triggerEmergency) { \n      // 1. On commence avec des valeurs normales\n      heartRate = random(65, 96);\n      spo2 = random(96, 101);\n      temperature = random(363, 371) / 10.0; \n\n      // 2. On choisit UN SEUL problème au hasard (0, 1, 2 ou 3)\n      int emergencyType = random(0, 4); \n      \n      if (emergencyType == 0) {\n        heartRate = random(125, 150); // Cœur trop rapide\n        Serial.println(\"🚨 URGENCE : Tachycardie (Cœur rapide)\");\n      } \n      else if (emergencyType == 1) {\n        heartRate = random(35, 49); // Cœur trop lent\n        Serial.println(\"🚨 URGENCE : Bradycardie (Cœur lent)\");\n      } \n      else if (emergencyType == 2) {\n        spo2 = random(80, 89); // Manque d'oxygène\n        Serial.println(\"🚨 URGENCE : Hypoxie (Oxygène bas)\");\n      } \n      else if (emergencyType == 3) {\n        temperature = random(385, 405) / 10.0; // Forte fièvre\n        Serial.println(\"🚨 URGENCE : Hyperthermie (Fièvre)\");\n      }\n    } \n    else {\n      // Si le bouton est relâché, on réinitialise pour le prochain test\n      if (digitalRead(buttonPin) == HIGH) {\n        alarmAcknowledged = false; \n      }\n      \n      // Valeurs normales\n      heartRate = random(65, 96);\n      spo2 = random(96, 101);\n      temperature = random(363, 371) / 10.0; \n    }\n\n    // Logique d'alerte locale (Buzzer et LED)\n    if ((heartRate > 120 || heartRate < 50 || spo2 < 90 || temperature > 38.0) && !alarmAcknowledged) {\n      digitalWrite(ledPin, HIGH);   \n      tone(buzzerPin, 1000);        \n    } else {\n      digitalWrite(ledPin, LOW);    \n      noTone(buzzerPin);            \n    }\n\n    // Création et envoi du JSON\n    StaticJsonDocument<200> doc;\n    doc[\"patient_id\"] = \"P001\";\n    doc[\"heart_rate\"] = heartRate;\n    doc[\"spo2\"] = spo2;\n    doc[\"temperature\"] = temperature;\n    doc[\"timestamp\"] = millis();\n\n    char jsonBuffer[256];\n    serializeJson(doc, jsonBuffer);\n\n    client.publish(mqtt_topic, jsonBuffer);\n    Serial.print(\"Publie: \");\n    Serial.println(jsonBuffer);\n  }\n}"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "r-led",
+      "metadataId": "resistor",
+      "x": 320,
+      "y": 205,
+      "properties": {
+        "value": "220"
+      }
+    },
+    {
+      "id": "led-ext",
+      "metadataId": "led",
+      "x": 470,
+      "y": 190,
+      "properties": {
+        "color": "red"
+      }
+    },
+    {
+      "id": "buzzer_1792604234619_u5p1b1ka1",
+      "metadataId": "buzzer",
+      "x": 383.8330102094215,
+      "y": 65.70624436475505,
+      "properties": {
+        "hasSignal": false
+      }
+    },
+    {
+      "id": "pushbutton_1792604345542_mzx3u8ds1",
+      "metadataId": "pushbutton",
+      "x": -153.1292056476298,
+      "y": -94.31757127211448,
+      "properties": {
+        "color": "red",
+        "pressed": false,
+        "label": "",
+        "xray": false
+      }
+    }
+  ],
+  "wires": [
+    {
+      "waypoints": [],
+      "id": "w-gpio4-r",
+      "start": {
+        "componentId": "esp32",
+        "pinName": "4",
+        "x": 184,
+        "y": 206
+      },
+      "end": {
+        "componentId": "r-led",
+        "pinName": "1",
+        "x": 326,
+        "y": 216.65
+      },
+      "color": "#e74c3c"
+    },
+    {
+      "waypoints": [],
+      "id": "w-r-led",
+      "start": {
+        "componentId": "r-led",
+        "pinName": "2",
+        "x": 384.8,
+        "y": 216.65
+      },
+      "end": {
+        "componentId": "led-ext",
+        "pinName": "A",
+        "x": 501,
+        "y": 238
+      },
+      "color": "#e74c3c"
+    },
+    {
+      "waypoints": [],
+      "id": "w-gnd",
+      "start": {
+        "componentId": "led-ext",
+        "pinName": "C",
+        "x": 491,
+        "y": 238
+      },
+      "end": {
+        "componentId": "esp32",
+        "pinName": "GND",
+        "x": 56,
+        "y": 244
+      },
+      "color": "#2c3e50"
+    },
+    {
+      "id": "wire-1792604248532",
+      "start": {
+        "componentId": "buzzer_1792604234619_u5p1b1ka1",
+        "pinName": "1",
+        "x": 416.8330102094215,
+        "y": 155.70624436475504
+      },
+      "end": {
+        "componentId": "esp32",
+        "pinName": "5",
+        "x": 184,
+        "y": 168
+      },
+      "waypoints": [
+        {
+          "x": 416.8330102094215,
+          "y": 168
+        }
+      ],
+      "color": "#22c55e",
+      "autoRouted": true
+    },
+    {
+      "id": "wire-1792604253418",
+      "start": {
+        "componentId": "buzzer_1792604234619_u5p1b1ka1",
+        "pinName": "2",
+        "x": 426.8330102094215,
+        "y": 155.70624436475504
+      },
+      "end": {
+        "componentId": "esp32",
+        "pinName": "GND2",
+        "x": 184,
+        "y": 244
+      },
+      "waypoints": [
+        {
+          "x": 184,
+          "y": 155.70624436475504
+        }
+      ],
+      "color": "#000000",
+      "autoRouted": true
+    },
+    {
+      "id": "wire-1792604393297",
+      "start": {
+        "componentId": "pushbutton_1792604345542_mzx3u8ds1",
+        "pinName": "2.l",
+        "x": -147.1292056476298,
+        "y": -56.31757127211448
+      },
+      "end": {
+        "componentId": "esp32",
+        "pinName": "12",
+        "x": 56,
+        "y": 219
+      },
+      "waypoints": [
+        {
+          "x": -147.1292056476298,
+          "y": 219
+        }
+      ],
+      "color": "#22c55e",
+      "autoRouted": true
+    },
+    {
+      "id": "wire-1792604397955",
+      "start": {
+        "componentId": "pushbutton_1792604345542_mzx3u8ds1",
+        "pinName": "1.r",
+        "x": -80.12920564762979,
+        "y": -75.31757127211448
+      },
+      "end": {
+        "componentId": "esp32",
+        "pinName": "GND2",
+        "x": 184,
+        "y": 244
+      },
+      "waypoints": [
+        {
+          "x": 184,
+          "y": -75.31757127211448
+        }
+      ],
+      "color": "#000000",
+      "autoRouted": true
+    }
+  ],
+  "activeBoardId": "esp32"
+}
